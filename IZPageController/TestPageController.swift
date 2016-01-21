@@ -8,22 +8,6 @@
 
 import UIKit
 
-class TestVC: UIViewController {
-    override func viewWillAppear(animated: Bool) {
-        super.viewWillAppear(animated)
-        print("will appear")
-    }
-    
-    override func viewWillDisappear(animated: Bool) {
-        super.viewWillDisappear(animated)
-        print("will disappear")
-    }
-    
-    func doThing() {
-        print("do thing")
-    }
-}
-
 class TestPageController: IZPageController, IZPageControllerDelegate {
     var dualView: Bool {
         return scrollView.frame.width >= 320 * 2 // 320 points is width of iPhone 4s/5/5s, the skinniest devices supported as of 2016.
@@ -39,7 +23,7 @@ class TestPageController: IZPageController, IZPageControllerDelegate {
     }
 
     func viewControllerAtIndex(index: Int) -> UIViewController {
-        let vc = TestVC()
+        let vc = UIViewController()
         switch index {
         case 0:
             vc.view.backgroundColor = .redColor()
@@ -73,9 +57,6 @@ class TestPageController: IZPageController, IZPageControllerDelegate {
     }
     
     func pageIndexChanged() {
-        (viewControllers[pageIndex!] as! TestVC).doThing()
-    }
-    
-    func scrollProgressUpdated() {
+        
     }
 }

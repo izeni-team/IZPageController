@@ -1,15 +1,33 @@
+// Copyright (c) 2016 Izeni
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom
+// the Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+//
 //
 //  IZPageController.swift
 //  IZPageController
 //
 //  Created by Christopher Bryan Henderson on 1/17/16.
-//  Copyright © 2016 Izeni.
+//  Copyright © 2016 Izeni. All rights reserved.
 //
-//  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import UIKit
 
@@ -26,9 +44,12 @@ public protocol IZPageViewControllerDelegate: class {
 
 public class IZPageController: UIViewController, UIScrollViewDelegate {
     public enum UpdateArea {
-        case Preload
-        case Visible
+        case Preload // We want to preload the adjacent pages.
+        case Visible // Only load view controllers we'll actually see.
     }
+    
+    // How many adjacent, non-visible view controllers to keep in memory.
+    public var preloadDistance: UInt = 1
     
     public let scrollView = UIScrollView()
     public var viewControllers = [UIViewController?]() // May decide to dealloc view controllers at own discretion
@@ -42,11 +63,7 @@ public class IZPageController: UIViewController, UIScrollViewDelegate {
     
     public var previouslyReportedPageIndex: Int?
     public var pageIndex: Int? {
-        if viewControllers.isEmpty {
-            return nil
-        } else {
-            return Int(pageIndexAtX(scrollView.contentOffset.x))
-        }
+        return visiblePageIndexes.first
     }
     
     // 0.0 to 1.0. Might return negative or > 1.0
@@ -60,19 +77,10 @@ public class IZPageController: UIViewController, UIScrollViewDelegate {
     }
     
     public var visiblePageIndexes: [Int] {
-        return indexesIntersecting(CGRect(origin: scrollView.contentOffset, size: scrollView.frame.size))
-    }
-    
-    public func pageIndexAtX(x: CGFloat) -> CGFloat {
-        if scrollView.frame.width != 0 && viewControllers.count > 0 {
-            return max(x / sizeOfViewController().width, 0)
-        } else {
-            return 0
-        }
-    }
-    
-    public func indexesIntersecting(frame: CGRect) -> [Int] {
-        return (0..<viewControllers.count).filter({ CGRectIntersectsRect(self.frameForViewControllerAtIndex($0), frame) })
+        let visibleFrame = CGRect(origin: scrollView.contentOffset, size: scrollView.frame.size)
+        return (0..<viewControllers.count).filter({
+            CGRectIntersectsRect(self.frameForViewControllerAtIndex($0), visibleFrame)
+        })
     }
     
     public override func viewDidLoad() {
@@ -86,13 +94,25 @@ public class IZPageController: UIViewController, UIScrollViewDelegate {
         view.addSubview(scrollView)
     }
     
-    public override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+    public override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransitionToSize(size, withTransitionCoordinator: coordinator)
         let previouslyVisible = self.currentlyVisibleIndex()
-        scrollView.frame.size = view.frame.size
-        updateViewControllers(add: false, remove: false, area: .Visible)
+        updateLayout(size)
         self.updateContentOffsetAfterRotation(previouslyVisible)
         self.updatePageIndex()
+    }
+    
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateLayout(view.frame.size)
+    }
+    
+    public func updateLayout(size: CGSize) {
+        // viewDidLayoutSubviews() gets called multiple times. We shouldn't do anything unless the size changes to avoid unwanted side effects.
+        if scrollView.frame.size != size {
+            scrollView.frame.size = size
+            updateViewControllers(.Visible)
+        }
     }
     
     public func currentlyVisibleIndex() -> Int {
@@ -111,35 +131,33 @@ public class IZPageController: UIViewController, UIScrollViewDelegate {
         for it in viewControllers.enumerate() {
             removeViewControllerAtIndex(it.index)
         }
-        viewControllers = (0..<(delegate?.numberOfViewControllers() ?? 0)).map({ _ in nil })
-        updateViewControllers(add: true, remove: true, area: .Preload)
+        viewControllers = []
+        for _ in 0..<(delegate?.numberOfViewControllers() ?? 0) {
+            viewControllers.append(nil)
+        }
+        updateViewControllers(.Preload)
     }
     
-    public func preloadArea() -> CGRect {
-        return CGRect(x: scrollView.contentOffset.x - scrollView.frame.width, y: 0, width: scrollView.frame.width * 3, height: scrollView.frame.height)
-    }
-    
-    public func updateViewControllers(add add: Bool, remove: Bool, area: UpdateArea) {
+    public func updateViewControllers(area: UpdateArea) {
         assert(delegate == nil || delegate!.numberOfViewControllers() == viewControllers.count, "You changed number of view controllers without calling reloadData(). Please call reloadData() immediately after changing the count.")
-        if add || remove {
-            let indexesOfInterest: [Int]
-            switch area {
-            case .Preload:
-                indexesOfInterest = indexesIntersecting(preloadArea())
-            case .Visible:
-                indexesOfInterest = visiblePageIndexes
-            }
-            
-            if add {
-                for index in indexesOfInterest {
-                    addViewControllerAtIndex(index)
-                }
-            }
-            if remove {
-                for index in Set(0..<viewControllers.count).subtract(indexesOfInterest) {
-                    removeViewControllerAtIndex(index)
-                }
-            }
+        let preloadArea: [Int]
+        let visibleArea = visiblePageIndexes
+        if visibleArea.isEmpty {
+            preloadArea = []
+        } else {
+            let left = max(0, visibleArea.first! - Int(preloadDistance))
+            let right = min(viewControllers.count - 1, visibleArea.last! + Int(preloadDistance))
+            preloadArea = [Int](left...right)
+        }
+        
+        // When scrolling, only ever add visible view controllers.
+        for index in area == .Preload ? preloadArea : visibleArea {
+            addViewControllerAtIndex(index)
+        }
+        
+        // When removing, only ever consider view controllers outside of the preload area, which is >= visible area.
+        for index in Set(0..<viewControllers.count).subtract(preloadArea) {
+            removeViewControllerAtIndex(index)
         }
         
         // Update frames (i.e., on rotate device).
@@ -193,12 +211,12 @@ public class IZPageController: UIViewController, UIScrollViewDelegate {
     }
     
     public func scrollViewDidScroll(scrollView: UIScrollView) {
-        updateViewControllers(add: true, remove: false, area: .Visible)
+        updateViewControllers(.Visible)
         delegate?.scrollProgressUpdated?()
     }
     
     public func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
         updatePageIndex()
-        updateViewControllers(add: true, remove: true, area: .Preload)
+        updateViewControllers(.Preload)
     }
 }
