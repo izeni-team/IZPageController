@@ -22,21 +22,21 @@ class TestPageController: IZPageController, IZPageControllerDelegate {
         return 4
     }
 
-    func viewControllerAtIndex(index: Int) -> UIViewController {
+    func viewController(at index: Int) -> UIViewController {
         let vc = UIViewController()
         switch index {
         case 0:
-            vc.view.backgroundColor = .redColor()
+            vc.view.backgroundColor = .red
         case 1:
-            vc.view.backgroundColor = .blueColor()
+            vc.view.backgroundColor = .blue
         case 2:
-            vc.view.backgroundColor = .greenColor()
+            vc.view.backgroundColor = .green
         case 3:
-            vc.view.backgroundColor = .yellowColor()
+            vc.view.backgroundColor = .yellow
         default:
-            vc.view.backgroundColor = .lightGrayColor()
+            vc.view.backgroundColor = .lightGray
         }
-        vc.view.backgroundColor = vc.view.backgroundColor!.colorWithAlphaComponent(0.5)
+        vc.view.backgroundColor = vc.view.backgroundColor!.withAlphaComponent(0.5)
         return vc
     }
     
@@ -50,9 +50,9 @@ class TestPageController: IZPageController, IZPageControllerDelegate {
     
     override func updateContentOffsetAfterRotation(previousIndex: Int) {
         if dualView {
-            super.updateContentOffsetAfterRotation(previousIndex - previousIndex % 2)
+            super.updateContentOffsetAfterRotation(previousIndex: previousIndex - previousIndex % 2)
         } else {
-            super.updateContentOffsetAfterRotation(previousIndex)
+            super.updateContentOffsetAfterRotation(previousIndex: previousIndex)
         }
     }
     
