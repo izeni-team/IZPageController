@@ -1,0 +1,16 @@
+PODS:
+  - IZPageController (0.1.0)
+
+DEPENDENCIES:
+  - IZPageController (from `../`)
+
+EXTERNAL SOURCES:
+  IZPageController:
+    :path: ../
+
+SPEC CHECKSUMS:
+  IZPageController: 139a93902da825deb18d493695cb6046aa248842
+
+PODFILE CHECKSUM: db959823d5dcd5c8143eaee98f8311194f0eb0a6
+
+COCOAPODS: 1.0.1
