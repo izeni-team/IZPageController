@@ -27,3 +27,59 @@ Taylor, tallred@izeni.com
 ## License
 
 IZPageController is available under the MIT license. See the LICENSE file for more info.
+
+Sample ViewController that shows basic functionality:
+
+```Swift
+import UIKit
+import IZPageController
+
+class ViewController: IZPageController, IZPageControllerDelegate {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        delegate = self
+    }
+
+    var dualView: Bool {
+        return scrollView.frame.width >= 320 * 2
+    }
+
+    func numberOfViewControllers() -> Int {
+        return 4
+    }
+
+    func viewController(at index: Int) -> UIViewController {
+        let vc = UIViewController()
+        switch index {
+        case 0:
+            vc.view.backgroundColor = .red
+        case 1:
+            vc.view.backgroundColor = .blue
+        case 2:
+            vc.view.backgroundColor = .green
+        case 3:
+            vc.view.backgroundColor = .yellow
+        default:
+            vc.view.backgroundColor = .lightGray
+        }
+        vc.view.backgroundColor = vc.view.backgroundColor!.withAlphaComponent(0.5)
+        return vc
+    }
+
+    override func sizeOfViewController() -> CGSize {
+        if dualView {
+            return CGSize(width: scrollView.frame.width / 2, height: scrollView.frame.height)
+        } else {
+            return scrollView.frame.size
+        }
+    }
+
+    override func updateContentOffsetAfterRotation(previousIndex: Int) {
+        if dualView {
+            super.updateContentOffsetAfterRotation(previousIndex: previousIndex - previousIndex % 2)
+        } else {
+            super.updateContentOffsetAfterRotation(previousIndex: previousIndex)
+        }
+    }
+}
+```
