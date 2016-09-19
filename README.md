@@ -5,10 +5,6 @@
 [![License](https://img.shields.io/cocoapods/l/IZPageController.svg?style=flat)](http://cocoapods.org/pods/IZPageController)
 [![Platform](https://img.shields.io/cocoapods/p/IZPageController.svg?style=flat)](http://cocoapods.org/pods/IZPageController)
 
-## Example
-
-To run the example project, clone the repo, and run `pod install` from the Example directory first.
-
 ## Requirements
 
 ## Installation
@@ -28,7 +24,7 @@ Taylor, tallred@izeni.com
 
 IZPageController is available under the MIT license. See the LICENSE file for more info.
 
-Sample ViewController that shows basic functionality:
+## Example
 
 ```Swift
 import UIKit
