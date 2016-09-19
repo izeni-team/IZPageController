@@ -1,6 +1,0 @@
-use_frameworks!
-target 'IZPageController_Tests' do
-  pod 'IZPageController', :path => '../'
-  
-  
-end
