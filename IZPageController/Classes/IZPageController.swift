@@ -132,7 +132,7 @@ open class IZPageController: UIViewController, UIScrollViewDelegate {
             removeViewController(at: it.offset)
         }
         viewControllers = []
-        for index in 0..<(delegate?.numberOfViewControllers() ?? 0) {
+        for _ in 0..<(delegate?.numberOfViewControllers() ?? 0) {
             viewControllers.append(nil)
         }
         updateViewControllers(area: .preload)
