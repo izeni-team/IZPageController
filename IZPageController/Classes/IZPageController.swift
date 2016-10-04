@@ -132,7 +132,7 @@ open class IZPageController: UIViewController, UIScrollViewDelegate {
             removeViewController(at: it.offset)
         }
         viewControllers = []
-        for _ in 0..<(delegate?.numberOfViewControllers() ?? 0) {
+        for index in 0..<(delegate?.numberOfViewControllers() ?? 0) {
             viewControllers.append(nil)
         }
         updateViewControllers(area: .preload)
@@ -200,6 +200,25 @@ open class IZPageController: UIViewController, UIScrollViewDelegate {
     
     open func sizeOfViewController() -> CGSize {
         return scrollView.frame.size
+    }
+    
+    open func scrollToViewController(at index : Int, animated : Bool) {
+        
+        let frame = frameForViewController(at: index)
+        
+        if animated {
+            UIView.animate(withDuration: 0, animations: {
+                self.scrollView.scrollRectToVisible(frame, animated: true)
+                
+                }, completion: { (success) in
+                    if success {
+                        self.updatePageIndex()
+                    }
+            })
+        } else {
+            scrollView.scrollRectToVisible(frame, animated: false)
+            updatePageIndex()
+        }
     }
     
     open func updatePageIndex() {
